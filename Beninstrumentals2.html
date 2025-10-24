@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ben's Instrumentals — BenAI & Beats</title>
+<style>
+  :root{
+    --bg:#0b0b0b; --card:#141414; --muted:#9aa3a8; --accent:#00ff88; --accent-2:#00cc66; --glass: rgba(255,255,255,0.03);
+  }
+  body.light{ --bg:#f4f6f8; --card:#ffffff; --muted:#4a4a4a; --accent:#0077cc; --accent-2:#005fa3; --glass: rgba(0,0,0,0.03);}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:var(--bg); color: #eaeaea; transition: .25s}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;background:linear-gradient(0deg, rgba(255,255,255,0.02), transparent);border-bottom:2px solid rgba(255,255,255,0.03)}
+  h1{color:var(--accent);font-size:20px;margin:0}
+  nav{display:flex;gap:10px;align-items:center}
+  nav button, .btn { background:var(--card); border:1px solid rgba(255,255,255,0.03); padding:8px 12px; border-radius:10px; color:inherit; cursor:pointer }
+  .container{display:grid;grid-template-columns:320px 1fr 340px; gap:18px;padding:22px}
+  /* Left column - user / signup / search */
+  .panel{background:var(--card);border-radius:12px;padding:14px}
+  .search{display:flex;gap:8px;margin-bottom:12px}
+  .search input{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit}
+  .beat-list{display:flex;flex-direction:column;gap:12px;max-height:64vh;overflow:auto;padding-right:6px}
+  .beat-item{display:flex;gap:10px;align-items:center;padding:8px;border-radius:10px;cursor:pointer}
+  .beat-item img{width:56px;height:56px;border-radius:8px;object-fit:cover}
+  .meta{font-size:13px}
+  .muted{color:var(--muted);font-size:12px}
+  /* center - main beats */
+  .main{display:flex;flex-direction:column;gap:18px}
+  .hero{background:linear-gradient(90deg, rgba(0,0,0,0.25), rgba(255,255,255,0.02)); padding:18px;border-radius:12px;display:flex;gap:16px;align-items:center}
+  .hero img{width:120px;height:120px;border-radius:10px;object-fit:cover}
+  .hero .txt h2{margin:0;color:var(--accent)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+  .card{background:var(--glass);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+  .card img{width:100%;height:140px;object-fit:cover;border-radius:8px}
+  .player-row{display:flex;align-items:center;gap:8px}
+  .playbtn{width:44px;height:44px;border-radius:50%;border:none;background:var(--accent);cursor:pointer}
+  .progress{flex:1;height:6px;background:#222;border-radius:6px;overflow:hidden;cursor:pointer}
+  .progress > i{display:block;height:100%;width:0;background:var(--accent-2)}
+  .visual-canvas{width:100%;height:36px;background:transparent;border-radius:6px}
+  .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .small{padding:6px 8px;font-size:13px;border-radius:8px}
+  /* right column - playlists, comments, quotes, BenAI */
+  .right-section{display:flex;flex-direction:column;gap:12px}
+  .playlist-list{display:flex;flex-direction:column;gap:8px}
+  .playlist-item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px}
+  .comments{max-height:28vh;overflow:auto;padding-top:8px;display:flex;flex-direction:column;gap:8px}
+  .quote-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .quote{padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);font-style:italic}
+  /* modals */
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:linear-gradient(0deg, rgba(0,0,0,0.5), rgba(0,0,0,0.5));z-index:50}
+  .modal.open{display:flex}
+  .modal .box{width:420px;background:var(--card);padding:16px;border-radius:12px}
+  label{display:block;font-size:13px;margin-bottom:6px}
+  input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit}
+  .row{display:flex;gap:8px}
+  .muted-small{font-size:12px;color:var(--muted)}
+  footer{padding:14px;text-align:center;color:var(--muted);font-size:13px}
+  /* small screens */
+  @media (max-width:1050px){.container{grid-template-columns:1fr; padding:12px} .right-section{order:3} .hero img{display:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;gap:12px;align-items:center">
+    <h1>Ben's Instrumentals</h1>
+    <div class="muted">— BenAI & Beats</div>
+  </div>
+  <nav>
+    <button class="btn" id="openSign">Sign up / Login</button>
+    <button class="btn" id="openBenAI">Init BenAI</button>
+    <button class="btn" id="toggleTheme">🌗 Theme</button>
+  </nav>
+</header>
+
+<div class="container">
+  <!-- LEFT column: Search, quick beats list, signup summary -->
+  <aside>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>Search Beats</strong>
+        <span class="muted-small" id="resultCount">0</span>
+      </div>
+      <div class="search">
+        <input id="searchInput" placeholder="Search by title, tag, mood..." />
+        <button id="clearSearch" class="btn">✖</button>
+      </div>
+      <div style="margin-bottom:8px">
+        <button class="btn" id="openCreatePlaylist">+ New Playlist</button>
+      </div>
+
+      <div class="beat-list" id="beatList"></div>
+    </div>
+
+    <div class="panel" style="margin-top:12px">
+      <strong>Your Account</strong>
+      <div id="accountSummary" style="margin-top:8px">
+        <div class="muted-small">Not signed in</div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn" id="openSign2">Sign up</button>
+        <button class="btn" id="logoutBtn" style="display:none">Logout</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN column: Hero and beats grid -->
+  <main class="main">
+    <div class="hero card">
+      <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4" alt="hero">
+      <div class="txt">
+        <h2>Welcome to Ben's World 🎧</h2>
+        <div class="muted-small">Slow vibes, Afro rhythms, lo-fi & trap — all in one place. Use BenAI to find beats or create playlists.</div>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <button class="btn" id="playAll">Play All</button>
+          <button class="btn" id="shuffleAll">Shuffle</button>
+          <button class="btn" id="showQuotes">Quotes</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong>Beats Library</strong>
+        <div class="muted-small">Click a card to play / open controls</div>
+      </div>
+      <div style="margin-top:12px" id="beatsGrid" class="grid"></div>
+    </div>
+  </main>
+
+  <!-- RIGHT column: Playlists, Comments, Quotes, BenAI quick -->
+  <aside class="right-section">
+    <div class="panel">
+      <strong>Playlists</strong>
+      <div class="playlist-list" id="playlistList" style="margin-top:8px"></div>
+    </div>
+
+    <div class="panel">
+      <strong>Now Playing</strong>
+      <div id="nowPlaying" style="margin-top:8px">Nothing playing</div>
+      <canvas id="visualizerCanvas" class="visual-canvas"></canvas>
+    </div>
+
+    <div class="panel">
+      <strong>Quotes</strong>
+      <div id="quoteRotator" style="margin:8px 0;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);font-style:italic"></div>
+      <div style="margin-top:8px" class="quote-grid" id="quoteGrid"></div>
+    </div>
+
+    <div class="panel">
+      <strong>Comments</strong>
+      <div id="commentControls" style="margin-top:8px">
+        <div class="muted-small">Select a beat to view/add comments</div>
+      </div>
+      <div class="comments" id="commentsList"></div>
+    </div>
+  </aside>
+</div>
+
+<!-- Modals: Sign up / BenAI / Playlist create -->
+<div id="modalSign" class="modal">
+  <div class="box">
+    <h3>Sign up</h3>
+    <form id="signupForm">
+      <label>Email<input type="email" id="suEmail" required></label>
+      <label>Date of Birth<input type="date" id="suDob" required></label>
+      <div class="row">
+        <label style="flex:1">Password<input type="password" id="suPass" required minlength="6"></label>
+        <label style="flex:1">Age<input type="number" id="suAge" min="1" required></label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label style="flex:1">Sex
+          <select id="suSex" required>
+            <option value="">Select</option><option>Male</option><option>Female</option><option>Other</option>
+          </select>
+        </label>
+        <label style="flex:1"><input type="checkbox" id="suTerms"> Accept T & C</label>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">
+        <button type="button" class="btn" id="closeSign">Cancel</button>
+        <button type="submit" class="btn">Create account</button>
+      </div>
+      <div class="muted-small" style="margin-top:8px">We store account locally for demo. Replace with server API when ready.</div>
+    </form>
+  </div>
+</div>
+
+<div id="modalBen" class="modal">
+  <div class="box">
+    <h3>BenAI </h3>
+    <div id="benChat" style="height:260px;overflow:auto;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02)"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input id="benInput" placeholder="Ask BenAI to suggest beats or say 'play slow'..." />
+      <button class="btn" id="benSend">Send</button>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn" id="closeBen">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalCreatePlaylist" class="modal">
+  <div class="box">
+    <h3>Create Playlist</h3>
+    <label>Playlist name<input id="plName" required></label>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn" id="closePL">Cancel</button>
+      <button class="btn" id="createPL">Create</button>
+    </div>
+  </div>
+</div>
+
+<footer>&copy; 2025 Ben's Instrumentals — Built with vibes. <span class="muted-small">Local demo features (signup/comments/playlists) stored in browser storage.</span></footer>
+
+<script>
+/* ========== Data ========== */
+const beats = [
+  {id:'b1', title:'Slow Vibe #1', tags:['slow','lofi'], src:'beats/Ben (5)', img:'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4', duration:0},
+  {id:'b2', title:'Afro Beat #1', tags:['afro','world'], src:'beats/mybeat.mp3', img:'https://images.unsplash.com/photo-1507874457470-272b3c8d8ee2', duration:0},
+  {id:'b3', title:'Lo-fi Chill', tags:['lofi','chill'], src:'beats/Ben (6).mp3', img:'https://images.unsplash.com/photo-1511376777868-611b54f68947', duration:0},
+  {id:'b4', title:'Trap Hit #1', tags:['trap','hit'], src:'beats/mybeat1.mp3', img:'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f', duration:0},
+  {id:'b5', title:'Chill Vibes #2', tags:['chill','vibes'], src:'beats/Ben instrumental 1.mp3', img:'https://images.unsplash.com/photo-1498050108023-c5249f4df085', duration:0}
+];
+
+const quotes = [
+  "Feel the music, feel the vibe.",
+  "Beats speak louder than words.",
+  "Your soul dances to the rhythm.",
+  "Good vibes only, always.",
+  "Let the music heal your mind.",
+  "Wake, make beats, sleep later.",
+  "If the beat hits, you remember."
+];
+
+/* ========== Helpers & UI references ========== */
+const beatListEl = document.getElementById('beatList');
+const beatsGrid = document.getElementById('beatsGrid');
+const searchInput = document.getElementById('searchInput');
+const resultCount = document.getElementById('resultCount');
+const nowPlaying = document.getElementById('nowPlaying');
+const visualCanvas = document.getElementById('visualizerCanvas');
+const commentsList = document.getElementById('commentsList');
+const commentControls = document.getElementById('commentControls');
+const quoteRotator = document.getElementById('quoteRotator');
+const quoteGrid = document.getElementById('quoteGrid');
+const playlistList = document.getElementById('playlistList');
+const accountSummary = document.getElementById('accountSummary');
+
+let currentAudio = null;
+let currentBeatId = null;
+let audioCtx, analyser, sourceNode, dataArray;
+let playlists = JSON.parse(localStorage.getItem('playlists')||'{}');
+let user = JSON.parse(localStorage.getItem('ben_user')||'null');
+
+/* ========== Init UI ========== */
+function init(){
+  renderBeatsGrid(beats);
+  renderBeatList(beats);
+  initQuotes();
+  updateAccountUI();
+  renderPlaylists();
+  updateResultCount();
+  setupVisualizer();
+}
+init();
+
+/* ========== Search ========== */
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  const filtered = beats.filter(b => b.title.toLowerCase().includes(q) || b.tags.some(t=>t.includes(q)));
+  renderBeatsGrid(filtered);
+  renderBeatList(filtered);
+  updateResultCount(filtered.length);
+});
+document.getElementById('clearSearch').addEventListener('click', ()=>{ searchInput.value=''; searchInput.dispatchEvent(new Event('input')); });
+
+function updateResultCount(n){ resultCount.textContent = (n===undefined?beats.length:n) + ' results'; }
+
+/* ========== Beat list & grid rendering ========== */
+function renderBeatList(list){
+  beatListEl.innerHTML='';
+  list.forEach(b=>{
+    const el = document.createElement('div');
+    el.className='beat-item';
+    el.innerHTML = `<img src="${b.img}" alt=""><div style="flex:1"><div class="meta">${b.title}</div><div class="muted">${b.tags.join(' • ')}</div></div><div><button class="btn small" onclick="playBeatFromList(event,'${b.id}')">Play</button></div>`;
+    el.querySelector('img').addEventListener('click', ()=>openBeatCard(b.id));
+    el.querySelector('.meta').addEventListener('click', ()=>openBeatCard(b.id));
+    beatListEl.appendChild(el);
+  });
+}
+
+function renderBeatsGrid(list){
+  beatsGrid.innerHTML='';
+  list.forEach(b=>{
+    const card = document.createElement('div');
+    card.className='card';
+    card.dataset.id = b.id;
+    card.innerHTML = `
+      <img src="${b.img}" alt="${b.title}">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong>${b.title}</strong>
+        <span class="muted-small">${b.tags.join(', ')}</span>
+      </div>
+      <div class="player-row" style="margin-top:8px">
+        <button class="playbtn" data-id="${b.id}">▶</button>
+        <div class="progress" data-id="${b.id}"><i></i></div>
+      </div>
+      <canvas class="card-visual" width="300" height="36" style="border-radius:6px"></canvas>
+      <div class="actions" style="margin-top:8px">
+        <button class="small" onclick="downloadBeat('${b.id}')">Download</button>
+        <button class="small" onclick="shareBeat('${b.id}')">Share</button>
+        <button class="small" onclick="openComments('${b.id}')">Comments</button>
+        <button class="small" onclick="openAddToPlaylist('${b.id}')">+ Playlist</button>
+      </div>
+    `;
+    // events
+    card.querySelector('.playbtn').addEventListener('click', ()=>togglePlay(b.id));
+    card.querySelector('.progress').addEventListener('click', (ev)=>seekFromClick(ev,b.id));
+    beatsGrid.appendChild(card);
+  });
+}
+
+/* ========== Play / Pause / Progress / Now playing ========== */
+function togglePlay(id){
+  const beat = beats.find(x=>x.id===id);
+  if(!beat) return;
+  if(currentBeatId === id && currentAudio && !currentAudio.paused){
+    currentAudio.pause();
+    updatePlayButton(id,false);
+    return;
+  }
+  playBeat(id);
+}
+
+function playBeat(id, startAt=0){
+  const beat = beats.find(x=>x.id===id);
+  if(!beat) return;
+  if(currentAudio){
+    currentAudio.pause();
+    detachAudio();
+  }
+  const audio = new Audio(beat.src);
+  audio.crossOrigin = "anonymous";
+  audio.currentTime = startAt;
+  currentAudio = audio;
+  currentBeatId = id;
+  audio.addEventListener('timeupdate', onTimeUpdate);
+  audio.addEventListener('ended', onEnded);
+  audio.play().catch(e=>console.warn('play blocked',e));
+  updateNowPlaying(beat.title);
+  updatePlayButton(id,true);
+  openComments(id);
+  attachAudioToVisualizer(audio);
+}
+
+function playBeatFromList(ev,id){
+  ev.stopPropagation();
+  playBeat(id);
+}
+
+function updateNowPlaying(text){
+  nowPlaying.textContent = text;
+}
+
+/* progress update */
+function onTimeUpdate(){
+  if(!currentAudio) return;
+  const pct = currentAudio.duration ? (currentAudio.currentTime / currentAudio.duration) *100 : 0;
+  // update the card progress
+  const p = document.querySelector(`.progress[data-id="${currentBeatId}"] i`);
+  if(p) p.style.width = pct + '%';
+  // also sync small list progress (if any)
+}
+
+/* ended */
+function onEnded(){
+  updatePlayButton(currentBeatId,false);
+  // try play next in playlist (if playlist mode), else nothing
+  const next = getNextBeatId(currentBeatId);
+  if(next) playBeat(next);
+}
+
+/* helper: find next beat in beats array */
+function getNextBeatId(currId){
+  const idx = beats.findIndex(b=>b.id===currId);
+  if(idx>=0 && idx < beats.length-1) return beats[idx+1].id;
+  return null;
+}
+
+/* update UI play button */
+function updatePlayButton(id, isPlaying){
+  // toggle icon for matching play button and list play buttons
+  document.querySelectorAll(`button.playbtn[data-id="${id}"]`).forEach(btn=>{
+    btn.textContent = isPlaying ? '⏸' : '▶';
+  });
+}
+
+/* seek */
+function seekFromClick(ev, id){
+  if(!currentAudio || id !== currentBeatId) return;
+  const rect = ev.currentTarget.getBoundingClientRect();
+  const x = ev.clientX - rect.left;
+  const pct = x / rect.width;
+  currentAudio.currentTime = currentAudio.duration * pct;
+}
+
+/* detach audio events and visualizer */
+function detachAudio(){
+  if(!currentAudio) return;
+  currentAudio.removeEventListener('timeupdate', onTimeUpdate);
+  currentAudio.removeEventListener('ended', onEnded);
+  stopVisualizer();
+  currentAudio = null;
+  currentBeatId = null;
+}
+
+/* ========== Visualizer (simple, single analyser) ========== */
+function setupVisualizer(){
+  try{
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    const bufferLength = analyser.frequencyBinCount;
+    dataArray = new Uint8Array(bufferLength);
+    drawVisualizer();
+  }catch(e){
+    console.warn('AudioContext not available', e);
+  }
+}
+
+function attachAudioToVisualizer(audio){
+  try{
+    if(!audioCtx) setupVisualizer();
+    if(!audioCtx) return;
+    // resume ctx if suspended
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    sourceNode = audioCtx.createMediaElementSource(audio);
+    sourceNode.connect(analyser);
+    analyser.connect(audioCtx.destination);
+  }catch(e){
+    console.warn('attach error', e);
+  }
+}
+
+let vizAnimation;
+function drawVisualizer(){
+  const c = visualCanvas;
+  const ctx = c.getContext('2d');
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    if(analyser){
+      analyser.getByteFrequencyData(dataArray);
+      const w = c.width / dataArray.length;
+      for(let i=0;i<dataArray.length;i++){
+        const v = dataArray[i] / 255;
+        const h = v * c.height;
+        ctx.fillStyle = 'rgba(0,255,136,0.8)';
+        ctx.fillRect(i*w, c.height - h, w*0.8, h);
+      }
+    }
+    vizAnimation = requestAnimationFrame(draw);
+  }
+  cancelAnimationFrame(vizAnimation);
+  draw();
+}
+
+function stopVisualizer(){
+  if(sourceNode){
+    try{ sourceNode.disconnect(); }catch(e){}
+    sourceNode = null;
+  }
+}
+
+/* ========== Download & Share ========== */
+function downloadBeat(id){
+  const b = beats.find(x=>x.id===id);
+  if(!b) return;
+  const a = document.createElement('a');
+  a.href = b.src;
+  a.download = b.title.replace(/\s+/g,'_') + '.mp3';
+  document.body.appendChild(a);
+  a.click(); a.remove();
+}
+
+function shareBeat(id){
+  const b = beats.find(x=>x.id===id);
+  if(!b) return;
+  const shareData = { title: b.title, text: 'Check this beat: '+b.title, url: location.href + '#beat=' + b.id };
+  if(navigator.share){
+    navigator.share(shareData).catch(()=>copyLink(shareData.url));
+  } else {
+    copyLink(shareData.url);
+    alert('Link copied to clipboard');
+  }
+}
+function copyLink(text){
+  navigator.clipboard?.writeText(text).catch(()=>{});
+}
+
+/* ========== Comments (localStorage) ========== */
+function openComments(beatId){
+  currentBeatId = beatId;
+  const b = beats.find(x=>x.id===beatId);
+  commentControls.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">
+    <strong>Comments for ${b.title}</strong>
+    <textarea id="commentText" placeholder="Write a comment..." rows="3" style="resize:none"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="addComment()">Add</button>
+    </div>
+  </div>`;
+  renderComments(beatId);
+}
+
+function addComment(){
+  const txt = document.getElementById('commentText');
+  if(!txt || !currentBeatId) return;
+  const val = txt.value.trim();
+  if(!val) return alert('Add a comment');
+  const key = 'comments_'+currentBeatId;
+  const arr = JSON.parse(localStorage.getItem(key) || '[]');
+  arr.push({text:val,time:Date.now()});
+  localStorage.setItem(key, JSON.stringify(arr));
+  txt.value='';
+  renderComments(currentBeatId);
+}
+
+function renderComments(beatId){
+  const key = 'comments_'+beatId;
+  const arr = JSON.parse(localStorage.getItem(key) || '[]');
+  commentsList.innerHTML = '';
+  if(arr.length===0) commentsList.innerHTML = '<div class="muted-small">No comments yet. Be the first 📝</div>';
+  arr.slice().reverse().forEach(c=>{
+    const el = document.createElement('div');
+    el.style.padding='8px'; el.style.borderRadius='8px'; el.style.background='rgba(255,255,255,0.02)';
+    el.innerHTML = `<div style="font-size:13px">${escapeHtml(c.text)}</div><div class="muted-small" style="margin-top:6px">${new Date(c.time).toLocaleString()}</div>`;
+    commentsList.appendChild(el);
+  });
+}
+
+/* ========== Playlists ========== */
+function renderPlaylists(){
+  playlistList.innerHTML='';
+  const keys = Object.keys(playlists);
+  if(keys.length===0) playlistList.innerHTML = '<div class="muted-small">No playlists yet</div>';
+  keys.forEach(name=>{
+    const arr = playlists[name];
+    const el = document.createElement('div');
+    el.className='playlist-item';
+    el.innerHTML = `<div>${name} <span class="muted-small">(${arr.length})</span></div>
+      <div style="display:flex;gap:6px">
+        <button class="small" onclick="playPlaylist('${escapeHtml(name)}')">Play</button>
+        <button class="small" onclick="renamePlaylist('${escapeHtml(name)}')">Rename</button>
+        <button class="small" onclick="deletePlaylist('${escapeHtml(name)}')">Del</button>
+      </div>`;
+    playlistList.appendChild(el);
+  });
+}
+
+function openAddToPlaylist(beatId){
+  let name = prompt('Add to playlist — type playlist name:');
+  if(!name) return;
+  name = name.trim();
+  if(!playlists[name]) playlists[name]=[];
+  if(!playlists[name].includes(beatId)) playlists[name].push(beatId);
+  localStorage.setItem('playlists', JSON.stringify(playlists));
+  renderPlaylists();
+}
+
+function playPlaylist(name){
+  const arr = playlists[name]||[];
+  if(arr.length===0) return alert('Playlist empty');
+  // play first and set sequential play
+  let idx=0;
+  function playNext(){
+    const id = arr[idx];
+    if(!id) return;
+    playBeat(id);
+    currentAudio.onended = () => {
+      idx++;
+      if(idx < arr.length) playNext();
+    };
+  }
+  playNext();
+}
+
+function renamePlaylist(name){
+  const newName = prompt('Rename playlist', name);
+  if(!newName) return;
+  playlists[newName]=playlists[name];
+  delete playlists[name];
+  localStorage.setItem('playlists', JSON.stringify(playlists));
+  renderPlaylists();
+}
+function deletePlaylist(name){
+  if(!confirm('Delete playlist "'+name+'"?')) return;
+  delete playlists[name];
+  localStorage.setItem('playlists', JSON.stringify(playlists));
+  renderPlaylists();
+}
+
+/* ========== Signup (local storage demo) ========== */
+document.getElementById('openSign').addEventListener('click', ()=>openSignModal());
+document.getElementById('openSign2').addEventListener('click', ()=>openSignModal());
+document.getElementById('closeSign').addEventListener('click', ()=>document.getElementById('modalSign').classList.remove('open'));
+function openSignModal(){ document.getElementById('modalSign').classList.add('open'); }
+document.getElementById('signupForm').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const email = document.getElementById('suEmail').value.trim();
+  const dob = document.getElementById('suDob').value;
+  const pass = document.getElementById('suPass').value;
+  const age = document.getElementById('suAge').value;
+  const sex = document.getElementById('suSex').value;
+  const terms = document.getElementById('suTerms').checked;
+  if(!terms) return alert('Accept terms & conditions');
+  const newUser = {email,dob,age,sex,created:Date.now()};
+  localStorage.setItem('ben_user', JSON.stringify(newUser));
+  user = newUser;
+  updateAccountUI();
+  document.getElementById('modalSign').classList.remove('open');
+});
+
+/* account UI */
+function updateAccountUI(){
+  if(user){
+    accountSummary.innerHTML = `<div><strong>${user.email}</strong></div><div class="muted-small">Joined: ${new Date(user.created||Date.now()).toLocaleDateString()}</div>`;
+    document.getElementById('logoutBtn').style.display='inline-block';
+  } else {
+    accountSummary.innerHTML = `<div class="muted-small">No account signed in</div>`;
+    document.getElementById('logoutBtn').style.display='none';
+  }
+}
+document.getElementById('logoutBtn').addEventListener('click', ()=>{ localStorage.removeItem('ben_user'); user=null; updateAccountUI(); });
+
+/* ========== BenAI modal - small simulated assistant ========== */
+document.getElementById('openBenAI').addEventListener('click', ()=>document.getElementById('modalBen').classList.add('open'));
+document.getElementById('closeBen').addEventListener('click', ()=>document.getElementById('modalBen').classList.remove('open'));
+document.getElementById('benSend').addEventListener('click', sendBen);
+document.getElementById('benInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') sendBen(); });
+
+function sendBen(){
+  const q = document.getElementById('benInput').value.trim();
+  if(!q) return;
+  appendBen('user', q);
+  // simple rule-based responses
+  setTimeout(()=> {
+    let resp = "Sorry, I didn't catch that. Try: 'suggest slow', 'play afro', 'show playlists', or 'download Lo-fi Chill'.";
+    const ql = q.toLowerCase();
+    if(ql.includes('suggest') || ql.includes('recommend')){
+      if(ql.includes('slow')) resp = suggestByTag('slow');
+      else if(ql.includes('afro')) resp = suggestByTag('afro');
+      else if(ql.includes('lofi')) resp = suggestByTag('lofi');
+      else resp = suggestByTag(); // generic
+    } else if(ql.startsWith('play ')){
+      const title = q.substring(5).trim();
+      const found = beats.find(b => b.title.toLowerCase().includes(title.toLowerCase()));
+      if(found){ playBeat(found.id); resp = `Playing ${found.title}`; }
+      else resp = "Could not find that beat to play.";
+    } else if(ql.includes('download')){
+      const title = q.replace('download','').trim();
+      const found = beats.find(b => b.title.toLowerCase().includes(title.toLowerCase()));
+      if(found){ downloadBeat(found.id); resp = `Started download for ${found.title}`; }
+      else resp = "Which beat do you want to download?";
+    } else if(ql.includes('playlists') || ql.includes('playlist')){
+      resp = "You can create playlists from each beat's actions. Use: Create playlist → add beats.";
+    } else if(ql.includes('hi') || ql.includes('hello')) resp = "Wagwan! I'm BenAI — tell me a vibe (slow/afro/lofi/trap) and I'll suggest beats!";
+    appendBen('ben', resp);
+  }, 700);
+  document.getElementById('benInput').value='';
+}
+
+function appendBen(who, text){
+  const box = document.getElementById('benChat');
+  const el = document.createElement('div');
+  el.style.marginBottom='8px';
+  el.innerHTML = `<div style="font-size:13px"><strong>${who==='user'?'You':'BenAI'}</strong></div><div style="margin-top:4px">${escapeHtml(text)}</div>`;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+function suggestByTag(tag){
+  const pool = tag ? beats.filter(b=>b.tags.includes(tag)) : beats;
+  if(pool.length===0) return "No matches.";
+  const pick = pool[Math.floor(Math.random()*pool.length)];
+  return `Try "${pick.title}" — say "play ${pick.title}" to play it.`;
+}
+
+/* ========== Quotes UI ========== */
+function initQuotes(){
+  quoteRotator.textContent = quotes[Math.floor(Math.random()*quotes.length)];
+  setInterval(()=>{ quoteRotator.textContent = quotes[Math.floor(Math.random()*quotes.length)]; }, 5000);
+  // grid
+  quoteGrid.innerHTML = '';
+  quotes.forEach(q=>{
+    const el = document.createElement('div');
+    el.className='quote';
+    el.textContent = q;
+    quoteGrid.appendChild(el);
+  });
+}
+
+/* ========== Utility & misc UI handlers ========== */
+function openBeatCard(id){
+  // scroll to card in grid and open / play
+  const card = document.querySelector(`.card[data-id="${id}"]`);
+  if(card){
+    card.scrollIntoView({behavior:'smooth',block:'center'});
+    // highlight
+    card.style.boxShadow='0 10px 30px rgba(0,0,0,0.6)';
+    setTimeout(()=>card.style.boxShadow='',1200);
+  }
+}
+
+document.getElementById('playAll').addEventListener('click', ()=>{
+  if(beats.length) playBeat(beats[0].id);
+});
+
+document.getElementById('shuffleAll').addEventListener('click', ()=>{
+  const pick = beats[Math.floor(Math.random()*beats.length)];
+  playBeat(pick.id);
+});
+
+document.getElementById('showQuotes').addEventListener('click', ()=>{ alert('Quotes visible in the right column — click to copy.'); });
+
+/* modal create playlist */
+document.getElementById('openCreatePlaylist').addEventListener('click', ()=>document.getElementById('modalCreatePlaylist').classList.add('open'));
+document.getElementById('closePL').addEventListener('click', ()=>document.getElementById('modalCreatePlaylist').classList.remove('open'));
+document.getElementById('createPL').addEventListener('click', ()=>{
+  const name = document.getElementById('plName').value.trim();
+  if(!name) return alert('Name playlist');
+  if(playlists[name]) return alert('Playlist exists');
+  playlists[name]=[];
+  localStorage.setItem('playlists', JSON.stringify(playlists));
+  document.getElementById('plName').value='';
+  document.getElementById('modalCreatePlaylist').classList.remove('open');
+  renderPlaylists();
+});
+
+/* basic safe-escape */
+function escapeHtml(unsafe){ return unsafe.replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#039;"}[m]; }); }
+
+/* ======= small helpers to support demo UX ======= */
+function openSignModal(){ document.getElementById('modalSign').classList.add('open'); }
+document.getElementById('openSign').addEventListener('click', openSignModal);
+document.getElementById('openSign2').addEventListener('click', openSignModal);
+
+/* Theme toggle */
+document.getElementById('toggleTheme').addEventListener('click', ()=> document.body.classList.toggle('light'));
+
+/* escape hatch: ensure playback UI updates when audio changes */
+setInterval(()=> {
+  if(currentAudio){
+    onTimeUpdate();
+  }
+}, 500);
+
+/* load initial visuals & grid after DOM ready */
+window.addEventListener('load', ()=> {
+  // render grid once
+  renderBeatsGrid(beats);
+  renderBeatList(beats);
+});
+
+/* Prevent links from navigating if any */
+document.querySelectorAll('a').forEach(a=>a.addEventListener('click', (e)=>{ if(a.getAttribute('href')==='#!') e.preventDefault() }));
+
+</script>
+</body>
+</html>
